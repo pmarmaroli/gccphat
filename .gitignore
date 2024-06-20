@@ -1,0 +1,53 @@
+# Ignore build outputs
+bin/
+obj/
+
+# Ignore user-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore Visual Studio specific files
+.vscode/
+.vs/
+
+# Ignore Rider specific files
+.idea/
+
+# Ignore NuGet packages
+packages/
+*.nupkg
+*.snupkg
+
+# Ignore logs
+*.log
+
+# Ignore compiled files
+*.dll
+*.exe
+*.so
+*.dylib
+*.pdb
+
+# Ignore database files
+*.mdf
+*.ldf
+
+# Ignore generated files
+*.class
+*.pyc
+*.jar
+
+# Ignore key and configuration files
+config/
+*.key
+*.pem
+*.cer
+*.crt
+encryptionKey.txt
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
