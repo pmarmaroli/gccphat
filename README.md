@@ -37,8 +37,7 @@ Download Executable
 ---
 You can download the executable directly from the link below:
 
-[Download GCC-PHAT Executable](https://your-link-to-zip-file.com/gcc-phat.zip)
-
+[Download the executable](https://github.com/pmarmaroli/gccphat/blob/main/gccphat.zip)
 
 
 Build the solution
