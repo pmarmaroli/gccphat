@@ -3,8 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
-using System.Threading.Tasks;
 using NAudio.Wave;
 using gccphat_core;
 using System.Collections.Concurrent;
