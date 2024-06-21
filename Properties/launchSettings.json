@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "gccphat": {
+      "commandName": "Project",
+      "commandLineArgs": "stereo_noise.wav 4096 200 8000 1"
+    }
+  }
+}

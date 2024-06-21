@@ -16,16 +16,16 @@ namespace gccphat
         {
             try
             {
-                if (args.Length < 4)
+                if (args.Length < 5)
                 {
-                    Console.WriteLine("Usage: gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax>");
+                    Console.WriteLine("Usage: gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax> <outputToConsole>");
                     Console.WriteLine("  <audioFilePath> - Path to the stereo audio file.");
                     Console.WriteLine("  <bufferSize> - Buffer size in samples (must be a power of two).");
                     Console.WriteLine("  <fmin> - Minimum frequency in Hz.");
                     Console.WriteLine("  <fmax> - Maximum frequency in Hz.");
+                    Console.WriteLine("  <outputToConsole> - Flag to output results to console (true/false).");
                     return;
                 }
-
 
                 string filePath = args[0];
                 if (!int.TryParse(args[1], out int bufferSize))
@@ -46,34 +46,37 @@ namespace gccphat
                     return;
                 }
 
-                // Ensure the file exists
+                if (!bool.TryParse(args[4], out bool outputToConsole))
+                {
+                    Console.WriteLine("Invalid outputToConsole flag.");
+                    return;
+                }
+
                 if (!File.Exists(filePath))
                 {
                     Console.WriteLine("The provided file path does not exist.");
                     return;
                 }
 
-                Console.WriteLine($"Processing file: {filePath}");
+                (double[] leftChannel, double[] rightChannel, int fs) = ReadStereoAudio(filePath);
 
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
+                List<double> timeDelays = ComputeTimeDelays(leftChannel, rightChannel, bufferSize, fs, fmin, fmax);
 
+                stopwatch.Stop();
 
-                try
+                if (outputToConsole)
                 {
-                    (double[] leftChannel, double[] rightChannel, int fs) = ReadStereoAudio(filePath);
-
-                    // Start the stopwatch
-                    Stopwatch stopwatch = Stopwatch.StartNew();
-
-                    // Compute the time delays
-                    List<double> timeDelays = ComputeTimeDelays(leftChannel, rightChannel, bufferSize, fs, fmin, fmax);
-
-                    // Stop the stopwatch
-                    stopwatch.Stop();
-
-                    // Write the results to a CSV file
+                    foreach (var delay in timeDelays)
+                    {
+                        Console.WriteLine(delay);
+                    }
+                }
+                else
+                {
                     string outputFilePath = Path.Combine(Path.GetDirectoryName(filePath),
-                        Path.GetFileNameWithoutExtension(filePath) + "_left_right_delay_ms_vs_time_sec.csv");
+                        Path.GetFileNameWithoutExtension(filePath) + "_timedelay_ms_vs_time_s.csv");
 
                     using (var writer = new StreamWriter(outputFilePath))
                     {
@@ -86,17 +89,9 @@ namespace gccphat
                     }
 
                     Console.WriteLine("Time delays written to CSV file successfully.");
-                    Console.WriteLine($"Execution time: {stopwatch.Elapsed.TotalSeconds:F3} seconds");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"An error occurred: {ex.Message}");
-                    Console.WriteLine(ex.StackTrace);
-                }
-                finally
-                {
-                    Console.WriteLine("Processing completed.");
-                }
+
+                Console.WriteLine($"Execution time: {stopwatch.Elapsed.TotalSeconds:F3} seconds");
             }
             catch (Exception ex)
             {

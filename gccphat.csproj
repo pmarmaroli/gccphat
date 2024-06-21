@@ -33,6 +33,9 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <Authors>Patrick Marmaroli</Authors>
+    <Company>Hidacs / Vocametrix / Microsoft</Company>
+    <Description>A command-line tool for estimating time delay between stereo audio channels using the GCC-PHAT technique.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

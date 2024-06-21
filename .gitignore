@@ -2,6 +2,7 @@
 bin/
 obj/
 publish/
+to_publish.txt
 
 # Ignore user-specific files
 *.user
