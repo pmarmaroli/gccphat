@@ -30,12 +30,45 @@ Example:
 gccphat.exe stereo_noise.wav 1024 300 3000 true
 ```
 
+### How to choose the right buffer size ?
+
+The buffer size determines the length of the window analysis and must be an integer, a power of two, and greater than the expected delay. The table below provides some examples:
+
+| Signal Sampling Rate (Hz) | Maximum Expected Delay (ms) | Maximum Expected Delay (samples) | Minimum Buffer Size (next power of two) |
+|----------------------------|-----------------------------|-----------------------------------|-----------------------------------------|
+| 8000                       | 1                           | 8                                 | 16                                      |
+| 8000                       | 5                           | 40                                | 64                                      |
+| 8000                       | 10                          | 80                                | 128                                     |
+| 16000                      | 1                           | 16                                | 32                                      |
+| 16000                      | 5                           | 80                                | 128                                     |
+
+#### Theoretical Formulas
+
+1. **Maximum Expected Delay (samples):**
+   ```
+   Maximum Expected Delay (samples) = ceil((Signal Sampling Rate (Hz) * Maximum Expected Delay (ms)) / 1000)
+   ````
+   This formula converts the maximum expected delay from milliseconds to samples by multiplying the signal sampling rate (in Hz) by the maximum expected delay (in ms) and then dividing by 1000 (to convert ms to seconds). The result is rounded up to the nearest integer.
+
+2. **Minimum Buffer Size (next power of two):**
+   ```
+   Minimum Buffer Size = 2^(ceil(log2(Maximum Expected Delay (samples))))
+   ```
+   This formula calculates the smallest power of two greater than or equal to the maximum expected delay in samples. The result is obtained by taking the base-2 logarithm of the maximum expected delay (samples), rounding up to the nearest integer, and then raising 2 to that power.
+
+For more customized calculations, please visit our [buffer size calculator](https://pmarmaroli.github.io/bufferSizeCalculator.html).
+
+
 Output:
 ----
 
 - If `outputToConsole` is set to `true`, the program will print the time delays between channels in milliseconds directly to the console.
 - If `outputToConsole` is set to `false`, the program will output a CSV file with the time delays between channels in milliseconds versus time in seconds. The file will be saved in the same directory as the input audio file.
 
+Sign convention
+---
+- a negative delay means channel 2 is delayed compared to channel 1
+- a positive delay means channel 1 is delayed compared to channel 2
 
 Example of Console Output:
 ---
@@ -113,6 +146,8 @@ Acknowledgments
 
 This project includes code for performing an in-place complex FFT, which was written by Gerald T. Beauregard. The original code is released under the MIT License.
 
+I would like to acknowledge [Ergo Esken](https://www.linkedin.com/in/ergo-esken) from [Microsoft Development Center Estonia](https://www.facebook.com/MSDevEstonia/) for his valuable feedbacks and beta-testing.
+
 Citation
 --
 
@@ -121,7 +156,7 @@ If you use this code in your research or project, please cite it as follows:
 ```
 @software{pmarmaroli_2024_gccphat,
   author = {Patrick Marmaroli},
-  title = {GCC-PHAT Time Delay Estimation},
+  title = {A C# implementation of the GCC-PHAT algorithm for time delay estimation},
   year = {2024},
   url = {https://github.com/pmarmaroli/gccphat}
 }
