@@ -23,7 +23,7 @@ namespace gccphat
                     Console.WriteLine("  <bufferSize> - Buffer size in samples (must be a power of two).");
                     Console.WriteLine("  <fmin> - Minimum frequency in Hz.");
                     Console.WriteLine("  <fmax> - Maximum frequency in Hz.");
-                    Console.WriteLine("  <outputToConsole> - Flag to output results to console (true/false).");
+                    Console.WriteLine("  <outputMode> - Flag to output results to console or to csv (csv/console).");
                     return;
                 }
 
@@ -46,9 +46,10 @@ namespace gccphat
                     return;
                 }
 
-                if (!bool.TryParse(args[4], out bool outputToConsole))
+                string outputMode = args[4].ToLower();
+                if (outputMode != "csv" && outputMode != "console")
                 {
-                    Console.WriteLine("Invalid outputToConsole flag.");
+                    Console.WriteLine("Invalid outputMode flag. Must be 'csv' or 'console'.");
                     return;
                 }
 
@@ -62,33 +63,38 @@ namespace gccphat
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                List<double> timeDelays = ComputeTimeDelays(leftChannel, rightChannel, bufferSize, fs, fmin, fmax);
+                var result = ComputeTimeDelays(leftChannel, rightChannel, bufferSize, fs, fmin, fmax);
+                List<double> timeDelays = result.timeDelaysList;
+                List<double> rms = result.rmsList;
 
                 stopwatch.Stop();
 
-                if (outputToConsole)
+                if (outputMode == "console")
                 {
-                    foreach (var delay in timeDelays)
+                    Console.WriteLine("{0, -15} {1, -15}", "Time Delay (ms)", "RMS Value");
+                    Console.WriteLine(new string('-', 30));
+
+                    for (int i = 0; i < timeDelays.Count; i++)
                     {
-                        Console.WriteLine(delay);
+                        Console.WriteLine("{0, -15} {1, -15}", timeDelays[i], rms[i]);
                     }
                 }
-                else
+                else if (outputMode == "csv")
                 {
                     string outputFilePath = Path.Combine(Path.GetDirectoryName(filePath),
                         Path.GetFileNameWithoutExtension(filePath) + "_timedelay_ms_vs_time_s.csv");
 
                     using (var writer = new StreamWriter(outputFilePath))
                     {
-                        writer.WriteLine("Time (s);Time Delay (ms)");
+                        writer.WriteLine("Time (s);Time Delay (ms);RMS Value");
                         for (int i = 0; i < timeDelays.Count; i++)
                         {
                             double timeSec = (double)i * bufferSize / fs;
-                            writer.WriteLine($"{timeSec:F6};{timeDelays[i]:F3}");
+                            writer.WriteLine($"{timeSec:F6};{timeDelays[i]:F3};{rms[i]:F3}");
                         }
                     }
 
-                    Console.WriteLine("Time delays written to CSV file successfully.");
+                    Console.WriteLine("Time delays and RMS values written to CSV file successfully.");
                 }
 
                 Console.WriteLine($"Execution time: {stopwatch.Elapsed.TotalSeconds:F3} seconds");
@@ -128,9 +134,10 @@ namespace gccphat
             }
         }
 
-        public static List<double> ComputeTimeDelays(double[] leftChannel, double[] rightChannel, int bufferSize, int fs, int fmin, int fmax)
+        public static (List<double> timeDelaysList, List<double> rmsList) ComputeTimeDelays(double[] leftChannel, double[] rightChannel, int bufferSize, int fs, int fmin, int fmax)
         {
             var timeDelays = new ConcurrentBag<double>();
+            var rms = new ConcurrentBag<double>();
 
             int numBuffers = leftChannel.Length / bufferSize;
 
@@ -153,7 +160,10 @@ namespace gccphat
                         continue;
                     }
 
-                    double timeDelay_ms = GccPhatCore.GCCPHAT(leftBuffer, rightBuffer, fs, 1, fmin, fmax);
+                    var result = GccPhatCore.GCCPHAT(leftBuffer, rightBuffer, fs, 1, fmin, fmax);
+                    double timeDelay_ms = result.timeDelay_ms;
+                    double rms_v = result.rmsValue;
+
                     //if (gccPhat == null || axeMs == null)
                     //{
                     //    Console.WriteLine("GCCPHAT returned null results.");
@@ -169,6 +179,8 @@ namespace gccphat
 
                     //double timeDelay = axeMs[maxIndex];
                     timeDelays.Add(timeDelay_ms);
+                    rms.Add(rms_v);
+
                 }
                 catch (Exception ex)
                 {
@@ -179,9 +191,10 @@ namespace gccphat
 
             // Convert ConcurrentBag to List if needed
             List<double> timeDelaysList = timeDelays.ToList();
+            List<double> rmsList = rms.ToList();
 
             Console.WriteLine("Time delays computed successfully.");
-            return timeDelaysList;
+            return (timeDelaysList, rmsList);
         }
     }
 }

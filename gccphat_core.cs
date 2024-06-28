@@ -243,7 +243,8 @@ namespace gccphat_core
 
             return sigoutComplex;
         }
-        public static Complex[] COLORE_FREQ(double[] sigin, int fs, int fmin, int fmax, int mode)
+        public static (Complex[] sigoutComplex, double rmsValue) COLORE_FREQ(double[] sigin, int fs, int fmin, int fmax, int mode)
+
         {
             int nfft = sigin.Length;
 
@@ -306,7 +307,26 @@ namespace gccphat_core
             // Compute sigoutComplex using the optimized function
             Complex[] sigoutComplex = ComputeSigoutComplex(siginFFT, absS);
 
-            return sigoutComplex;
+            // Compute RMS value in the frequency domain
+            double rmsValue = ComputeRMSFromFFT(sigoutComplex, nfft);
+
+            return (sigoutComplex, rmsValue);
+        }
+
+        public static double ComputeRMSFromFFT(Complex[] signalFFT, int nfft)
+        {
+            double sumOfSquares = 0.0;
+
+            // Use Parseval's theorem to compute sum of squares in frequency domain
+            for (int i = 0; i < signalFFT.Length; i++)
+            {
+                sumOfSquares += signalFFT[i].Magnitude * signalFFT[i].Magnitude;
+            }
+
+            double meanOfSquares = sumOfSquares / nfft;
+            double rms = Math.Sqrt(meanOfSquares);
+
+            return rms;
         }
 
         public static Complex[] MYFFT(double[] a)
@@ -354,16 +374,17 @@ namespace gccphat_core
             return shiftedArray;
         }
 
-        public static double GCCPHAT(double[] s1, double[] s2, int fs, int norm, int fmin, int fmax)
+        public static (double timeDelay_ms, double rmsValue) GCCPHAT(double[] s1, double[] s2, int fs, int norm, int fmin, int fmax)
         {
-            Complex[] f_s1 = COLORE_FREQ(s1, fs, fmin, fmax, 1);
-            Complex[] f_s2 = COLORE_FREQ(s2, fs, fmin, fmax, 1);
+            var result = COLORE_FREQ(s1, fs, fmin, fmax, 1);
+            Complex[] f_s1 = result.sigoutComplex;
+            double rms_s1 = result.rmsValue;
+
+            result = COLORE_FREQ(s2, fs, fmin, fmax, 1);
+            Complex[] f_s2 = result.sigoutComplex;                            
+            double rms_s2 = result.rmsValue;
 
             int length = f_s1.Length;
-
-            //Complex[] Pxy = new Complex[length];
-            //Complex[] denom = new Complex[length];
-            //double[] G;
 
             // Compute Pxy and denom arrays
             for (int i = 0; i < length; i++)
@@ -429,7 +450,7 @@ namespace gccphat_core
             }
 
             double timeDelay_ms = ((maxIndex - halfLength) / (double)fs) * 1000;
-            return timeDelay_ms;
+            return (timeDelay_ms, rms_s1);
         }
 
 
