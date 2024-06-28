@@ -23,11 +23,12 @@ gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax> <outputToConsole>
 - ```<bufferSize>```: Size of the buffer in samples (must be a power of two).
 - ```<fmin>```: Minimum frequency in Hz for band-pass filtering.
 - ```<fmax>```: Maximum frequency in Hz for band-pass filtering.
-- ``` <outputToConsole> ```: Flag to specify output method (`true` to print results to the console, `false` to write results to a CSV file).
+- ``` <outputMode> ```: Flag to output results to the console (if `console`) or to a CSV file (if `csv`).
 
 Example:
 ```
-gccphat.exe stereo_noise.wav 1024 300 3000 true
+gccphat.exe stereo_noise.wav 1024 300 3000 console
+gccphat.exe stere_noise_.wav 2048 100 8000 csv
 ```
 
 ### How to choose the right buffer size ?
@@ -62,8 +63,8 @@ For more customized calculations, please visit our [buffer size calculator](http
 Output:
 ----
 
-- If `outputToConsole` is set to `true`, the program will print the time delays between channels in milliseconds directly to the console.
-- If `outputToConsole` is set to `false`, the program will output a CSV file with the time delays between channels in milliseconds versus time in seconds. The file will be saved in the same directory as the input audio file.
+- If `outputMode` is set to `console`, the program will print the time delays between channels in milliseconds directly to the console.
+- If `outputMode` is set to `csv`, the program will output a CSV file with the time delays between channels in milliseconds versus time in seconds. The file will be saved in the same directory as the input audio file.
 
 Sign convention
 ---
@@ -76,23 +77,29 @@ Example of Console Output:
 ```
 > gccphat.exe stereo_noise.wav 8192 0 24000 true
 Channels separated successfully.
-Time delays computed successfully.
--10,020833333333332
--10,020833333333332
--10,020833333333332
--10,020833333333332
--10,020833333333332
+Time Delay (ms) RMS Value
+------------------------------
+-10,020833333333332 6,140172267301812
+-10,020833333333332 5,849366733674642
+-10,020833333333332 6,216865357521091
+-10,020833333333332 6,008303843811485
+-10,020833333333332 5,485012392480706
+-10,020833333333332 5,920044803823134
+-10,020833333333332 5,592961057724904
+...
 Execution time: 0,062 seconds
 ```
+
+Note the RMS (root mean square) output is calculated on first channel only, and considering the signal between `fmin` and `fmax` only.
 
 Example of CSV Output:
 ---
 
 ```
-Time (s);Time Delay (ms)
-0.000000;1.234
-0.021333;2.345
-0.042667;1.678
+Time (s);Time Delay (ms);RNS Value
+0.000000;1.234;6.140
+0.021333;2.345;5.849
+0.042667;1.678;6.217
 ...
 ``` 
 
