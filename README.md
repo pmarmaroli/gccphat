@@ -1,4 +1,4 @@
-GCC-PHAT Time Delay Estimation
+A C# implementation of the GCC-PHAT algorithm for time delay estimation
 =============
 
 Description
