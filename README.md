@@ -1,4 +1,4 @@
-# A C# implementation of the GCC-PHAT algorithm for time delay estimation
+# GCCPHAT Time Delay Estimator for Stereo Channels – Executable & C# Source Code
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20MacOS%20%7C%20Linux-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
