@@ -1,5 +1,8 @@
-A C# implementation of the GCC-PHAT algorithm for time delay estimation
-=============
+# A C# implementation of the GCC-PHAT algorithm for time delay estimation
+
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20MacOS%20%7C%20Linux-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
 
 Description
 -----------
