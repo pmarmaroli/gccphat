@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '8.0.x'
       - name: Publish
         run: dotnet publish gccphat.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o publish
       - name: Create Release
