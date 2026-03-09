@@ -19,7 +19,7 @@ Usage
 To estimate the time delays between the stereo channels, run the executable with the required parameters:
 
 ```
-gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax> <outputToConsole>
+gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax> <outputMode>
 ```
 
 - ```<audioFilePath>```: Path to the stereo audio file (WAV format).
@@ -78,7 +78,7 @@ Example of Console Output:
 ---
 
 ```
-> gccphat.exe stereo_noise.wav 8192 0 24000 true
+> gccphat.exe stereo_noise.wav 8192 0 24000 console
 Channels separated successfully.
 Time Delay (ms) RMS Value
 ------------------------------
@@ -99,7 +99,7 @@ Example of CSV Output:
 ---
 
 ```
-Time (s);Time Delay (ms);RNS Value
+Time (s);Time Delay (ms);RMS Value
 0.000000;1.234;6.140
 0.021333;2.345;5.849
 0.042667;1.678;6.217

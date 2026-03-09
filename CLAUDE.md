@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GCC-PHAT (Generalized Cross-Correlation with Phase Transform) — a C# .NET 5.0 console application for time-delay estimation between two audio channels in a stereo WAV file.
+GCC-PHAT (Generalized Cross-Correlation with Phase Transform) — a C# .NET 8.0 (Windows) console application for time-delay estimation between two audio channels in a stereo WAV file.
 
 ## Build & Run
 
@@ -19,14 +19,14 @@ dotnet build gccphat.csproj -c Release
 gccphat.exe <audioFilePath> <bufferSize> <fmin> <fmax> <outputMode>
 
 # Example (matches launchSettings.json debug profile)
-gccphat.exe stereo_noise.wav 4096 200 8000 1
+gccphat.exe stereo_noise.wav 4096 200 8000 console
 ```
 
 **Parameters:**
 - `audioFilePath`: Stereo WAV file path
 - `bufferSize`: Power-of-2 window size (e.g. 1024, 2048, 4096, 8192)
 - `fmin` / `fmax`: Frequency band in Hz for band-pass filtering
-- `outputMode`: `0` = console, `1` = CSV file
+- `outputMode`: `console` = print to stdout, `csv` = write CSV file
 
 There is no test framework — manual testing uses the included `stereo_noise.wav`.
 
@@ -35,14 +35,14 @@ There is no test framework — manual testing uses the included `stereo_noise.wa
 Two source files contain the entire logic:
 
 ### `Program.cs`
-Entry point. Handles CLI argument parsing, loads the stereo WAV via NAudio (`ReadStereoAudio()`), then calls `ComputeTimeDelays()` which processes each buffer in parallel using `ConcurrentBag<>`.
+Entry point. Handles CLI argument parsing, loads the stereo WAV via NAudio (`ReadStereoAudio()`), then calls `ComputeTimeDelays()` which iterates over buffers sequentially, accumulating results in a `ConcurrentBag<>`.
 
 ### `gccphat_core.cs`
 Two classes:
 
 - **`FFT2`**: In-place complex FFT/IFFT (MIT-licensed, Gerald T. Beauregard 2010). Used internally by `GccPhatCore`.
 - **`GccPhatCore`**: The algorithm itself.
-  - `GCCPHAT(ch1, ch2, fs, nfft, fmin, fmax)` — main entry point; returns time delay in ms and RMS energy.
+  - `GCCPHAT(ch1, ch2, fs, norm, fmin, fmax)` — main entry point; `norm=1` enables PHAT weighting; returns time delay in ms and RMS energy.
   - `COLORE_FREQ()` — band-pass filter in frequency domain.
   - `ComputeSigoutComplex()` — applies phase from one signal with magnitude of another (the PHAT weighting).
   - `ComputeRMSFromFFT()` — RMS via Parseval's theorem.
@@ -57,7 +57,7 @@ Two classes:
 
 ## Dependencies
 
-Managed via NuGet (`packages.config`):
+Managed via `<PackageReference>` in the csproj:
 - **NAudio 2.2.1** — WAV file I/O
 - **MathNet.Numerics 5.0.0** — numerical utilities
-- **System.Numerics** — `Complex` type
+- **System.Numerics** — `Complex` type (built into .NET)
