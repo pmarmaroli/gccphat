@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20MacOS%20%7C%20Linux-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Build](https://github.com/pmarmaroli/gccphat/actions/workflows/release.yml/badge.svg)
 
 Description
 -----------
@@ -110,9 +110,7 @@ The CSV file will be saved as `<file_name>_timedelay_ms_vs_time_s.csv` in the sa
 
 Download Executable
 ---
-You can download the executable directly from the link below:
-
-[Download the executable](https://github.com/pmarmaroli/gccphat/blob/main/gccphat.zip)
+Download the latest `gccphat.exe` from the [GitHub Releases page](https://github.com/pmarmaroli/gccphat/releases/latest).
 
 
 Build the solution

@@ -53,3 +53,6 @@ encryptionKey.txt
 # Ignore OS specific files
 .DS_Store
 Thumbs.db
+
+# Ignore zip archives
+*.zip
