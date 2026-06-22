@@ -34,16 +34,11 @@ namespace gccphat_core
      */
     public class FFT2
     {
-        private class FFTElement
-        {
-            public double Re;
-            public double Im;
-            public uint RevTgt;
-        }
-
         private uint _logN;
         private uint _N;
-        private FFTElement[] _elements;
+        private double[] _re;
+        private double[] _im;
+        private uint[] _revTgt;
 
         public FFT2()
         {
@@ -53,16 +48,13 @@ namespace gccphat_core
         {
             _logN = logN;
             _N = 1u << (int)_logN;
-            _elements = new FFTElement[_N];
+            _re = new double[_N];
+            _im = new double[_N];
+            _revTgt = new uint[_N];
 
             for (uint i = 0; i < _N; i++)
             {
-                _elements[i] = new FFTElement();
-            }
-
-            for (uint i = 0; i < _N; i++)
-            {
-                _elements[i].RevTgt = BitReverse(i, _logN);
+                _revTgt[i] = BitReverse(i, _logN);
             }
         }
 
@@ -76,10 +68,12 @@ namespace gccphat_core
         public void Run(double[] xRe, double[] xIm, bool inverse = false)
         {
             double scale = inverse ? 1.0 / _N : 1.0;
+            double[] re = _re;
+            double[] im = _im;
             for (uint i = 0; i < _N; i++)
             {
-                _elements[i].Re = scale * xRe[i];
-                _elements[i].Im = scale * xIm[i];
+                re[i] = scale * xRe[i];
+                im[i] = scale * xIm[i];
             }
 
             uint numFlies = _N >> 1;
@@ -105,22 +99,22 @@ namespace gccphat_core
 
                     for (uint flyCount = 0; flyCount < numFlies; flyCount++)
                     {
-                        FFTElement top = _elements[start + flyCount];
-                        FFTElement bot = _elements[start + flyCount + span];
+                        uint topIndex = start + flyCount;
+                        uint botIndex = topIndex + span;
 
-                        double topRe = top.Re;
-                        double topIm = top.Im;
-                        double botRe = bot.Re;
-                        double botIm = bot.Im;
+                        double topRe = re[topIndex];
+                        double topIm = im[topIndex];
+                        double botRe = re[botIndex];
+                        double botIm = im[botIndex];
 
-                        top.Re = topRe + botRe;
-                        top.Im = topIm + botIm;
+                        re[topIndex] = topRe + botRe;
+                        im[topIndex] = topIm + botIm;
 
                         double diffRe = topRe - botRe;
                         double diffIm = topIm - botIm;
 
-                        bot.Re = diffRe * wRe - diffIm * wIm;
-                        bot.Im = diffRe * wIm + diffIm * wRe;
+                        re[botIndex] = diffRe * wRe - diffIm * wIm;
+                        im[botIndex] = diffRe * wIm + diffIm * wRe;
 
                         double tRe = wRe;
                         wRe = wRe * wMulRe - wIm * wMulIm;
@@ -136,9 +130,9 @@ namespace gccphat_core
 
             for (uint i = 0; i < _N; i++)
             {
-                uint target = _elements[i].RevTgt;
-                xRe[target] = _elements[i].Re;
-                xIm[target] = _elements[i].Im;
+                uint target = _revTgt[i];
+                xRe[target] = re[i];
+                xIm[target] = im[i];
             }
         }
 
@@ -165,8 +159,9 @@ namespace gccphat_core
     public static class GccPhatCore
     {
 
-        private static Dictionary<double, Complex> expLookupTable;
-        private static double[] sortedPhases;
+        private static Complex[] expLookupTable;
+        private static int expNumPoints;
+        private static double expStep;
         private static int previousNfft = 0;
         private static int previousFs = 0;
         private static double[] vfc_pos;
@@ -177,6 +172,8 @@ namespace gccphat_core
         private static double[] G;
         private static int[] axe_spl;
         private static double[] axe_ms;
+        private static FFT2 fftEngine;
+        private static int fftLogN = -1;
 
         public static void Initialize(int nfft, int fs)
         {
@@ -204,30 +201,30 @@ namespace gccphat_core
 
         private static void CreateExpLookupTable(int numPoints)
         {
-            expLookupTable = new Dictionary<double, Complex>();
-            double step = 2.0 * Math.PI / numPoints;
-            sortedPhases = new double[numPoints];
+            expNumPoints = numPoints;
+            expStep = 2.0 * Math.PI / numPoints;
+            expLookupTable = new Complex[numPoints];
             for (int i = 0; i < numPoints; i++)
             {
-                double phase = i * step - Math.PI; // Phase from -π to π
-                expLookupTable[phase] = Complex.Exp(Complex.ImaginaryOne * phase);
-                sortedPhases[i] = phase;
+                double phase = i * expStep - Math.PI; // Phase from -π to π
+                expLookupTable[i] = Complex.Exp(Complex.ImaginaryOne * phase);
             }
         }
 
         private static Complex GetExpFromLookup(double phase)
         {
-            // Perform binary search to find the nearest phase
-            int index = Array.BinarySearch(sortedPhases, phase);
+            // Nearest-neighbour index on the uniform [-π, π] grid (O(1), ties to the
+            // higher index to match the previous binary-search behaviour).
+            int index = (int)Math.Round((phase + Math.PI) / expStep, MidpointRounding.AwayFromZero);
             if (index < 0)
             {
-                index = ~index;
-                if (index == sortedPhases.Length || (index > 0 && Math.Abs(sortedPhases[index - 1] - phase) < Math.Abs(sortedPhases[index] - phase)))
-                {
-                    index--;
-                }
+                index = 0;
             }
-            return expLookupTable[sortedPhases[index]];
+            else if (index >= expNumPoints)
+            {
+                index = expNumPoints - 1;
+            }
+            return expLookupTable[index];
         }
 
         public static Complex[] ComputeSigoutComplex(Complex[] siginFFT, Complex[] absS)
@@ -329,17 +326,32 @@ namespace gccphat_core
             return rms;
         }
 
+        private static FFT2 GetFftEngine(int n)
+        {
+            int logN = (int)Math.Log(n, 2);
+            if (fftEngine == null || fftLogN != logN)
+            {
+                fftEngine = new FFT2();
+                fftEngine.Init((uint)logN);
+                fftLogN = logN;
+            }
+            return fftEngine;
+        }
+
         public static Complex[] MYFFT(double[] a)
         {
             try
             {
-                FFT2 fft2 = new FFT2();
-                fft2.Init((uint)Math.Log(a.Length, 2));
-                double[] xRe = a.ToArray();
+                FFT2 fft2 = GetFftEngine(a.Length);
+                double[] xRe = (double[])a.Clone();
                 double[] xIm = new double[a.Length];
                 fft2.Run(xRe, xIm);
-                return xRe.Select((re, i) => new Complex(re, xIm[i])).ToArray();
-
+                Complex[] result = new Complex[a.Length];
+                for (int i = 0; i < a.Length; i++)
+                {
+                    result[i] = new Complex(xRe[i], xIm[i]);
+                }
+                return result;
             }
             catch (Exception ex)
             {
@@ -350,13 +362,17 @@ namespace gccphat_core
         public static double[] MYIFFT(Complex[] a)
         {
             try
-            {      
-                FFT2 fft2 = new FFT2();
-                fft2.Init((uint)Math.Log(a.Length, 2));
-                double[] xRe = a.Select(c => c.Real).ToArray();
-                double[] xIm = a.Select(c => c.Imaginary).ToArray();
+            {
+                FFT2 fft2 = GetFftEngine(a.Length);
+                double[] xRe = new double[a.Length];
+                double[] xIm = new double[a.Length];
+                for (int i = 0; i < a.Length; i++)
+                {
+                    xRe[i] = a[i].Real;
+                    xIm[i] = a[i].Imaginary;
+                }
                 fft2.Run(xRe, xIm, true);
-                return xRe;                  
+                return xRe;
             }
             catch (Exception ex)
             {
