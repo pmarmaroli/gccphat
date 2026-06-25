@@ -2,6 +2,7 @@
 bin/
 obj/
 publish/
+_publish_share/
 to_publish.txt
 
 # Ignore user-specific files
